@@ -1,0 +1,11 @@
+#Build
+build/
+
+#Cache
+.cache/
+
+#For LSP
+compile_commands.json
+
+#Image files
+*.ppm
