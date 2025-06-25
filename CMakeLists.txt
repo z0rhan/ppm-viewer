@@ -7,6 +7,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SOURCE
     ${CMAKE_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/parser.cpp
+    ${CMAKE_SOURCE_DIR}/vendor/stb_image/stb_image_write.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE})
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/vendor/stb_image
+)

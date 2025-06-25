@@ -1,3 +1,5 @@
+#include "parser.hh"
+
 #include <iostream>
 #include <string>
 
@@ -8,7 +10,7 @@ bool hasPPMextension(std::string& fileName);
 int main (int argc, char *argv[]) {
     if (argc != 2)
     {
-        std::cerr << "Usage " << argv[0] << " file.ppm\n";
+        std::cerr << "Usage: " << argv[0] << " file.ppm\n";
         return EXIT_FAILURE;
     }
 
@@ -19,7 +21,10 @@ int main (int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "File loaded sucessfully\n";
+    if (!converToPNG(fileName))
+    {
+        return EXIT_FAILURE;
+    }
     return 0;
 }
 
