@@ -1,5 +1,5 @@
-#include "parser.hh"
-#include "stb_image_write.h"
+#include "PPMImage.hh"
+#include "stb_image/stb_image_write.h"
 
 #include <fstream>
 #include <iostream>
@@ -138,7 +138,7 @@ ImageData handleP3Data(const std::vector<std::string>& lines)
     std::vector<unsigned char> pixelData;
     pixelData.reserve(imageWidth * imageHeight * 3);
 
-    int r, g, b;
+    unsigned int r, g, b;
     while (pixelDataStream >> r >> g >> b)
     {
         if (r < 0 || r > maxColorValue ||

@@ -1,4 +1,5 @@
-#include "parser.hh"
+#include "core/PPMImage.hh"
+#include "core/application.hh"
 
 #include <iostream>
 #include <string>
@@ -8,24 +9,9 @@ static const std::string s_extension = ".ppm";
 bool hasPPMextension(std::string& fileName);
 
 int main (int argc, char *argv[]) {
-    if (argc != 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " file.ppm\n";
-        return EXIT_FAILURE;
-    }
+    Application app;
 
-    std::string fileName = argv[1];
-    if (!hasPPMextension(fileName))
-    {
-        std::cerr << "Error: .ppm file not found\n";
-        return EXIT_FAILURE;
-    }
-
-    if (!converToPNG(fileName))
-    {
-        return EXIT_FAILURE;
-    }
-    return 0;
+    return app.run(argc, argv);
 }
 
 bool hasPPMextension(std::string& fileName)

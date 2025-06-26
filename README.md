@@ -1,9 +1,7 @@
 # About
-A simple CLI tool to convert `.ppm` images to `.png`.
+A simple program to view .ppm format images. The support might be extended in the future.
 
-**Lmao, I lost all motivation since the gnome image-viewer does support the .ppm image files.   
-My file just had some rgb componentes > 255.   
-Anyway, I used stbi_image_write to implement a basic version.**
+**I decided to complete this project after some thought.**
 
 # Build
 Make sure you have **Git** and **CMake** installed.   
@@ -17,9 +15,10 @@ cmake -S . -B build
 cmake --build build
 ```
 This will generate the binary in `build/bin`.   
+
 # Usage
 Run the program with a .ppm file as an argument:
 ```
 path/to/ppm-viewer path/to/image.ppm
 ```
-The program will create an output.png file in the current directory.
+For now, it will just render an empty white window.
