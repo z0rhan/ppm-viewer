@@ -1,9 +1,9 @@
 #include "renderer.hh"
-#include "GLFW/glfw3.h"
+
+#include <GLFW/glfw3.h>
 #include <iostream>
 
-Renderer::Renderer() {}
-
+Renderer::Renderer(const ImageData& data) {}
 Renderer::~Renderer() {}
 
 void Renderer::run()
@@ -27,6 +27,7 @@ void Renderer::renderLoop()
         glfwPollEvents();
     }
 
+    // Cleanups
     glfwTerminate();
 }
 
@@ -62,3 +63,4 @@ bool Renderer::initGLFW()
 
     return true;
 }
+

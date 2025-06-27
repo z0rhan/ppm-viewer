@@ -1,14 +1,15 @@
 #ifndef RENDERER_HH
 #define RENDERER_HH
 
+#include "PPMImage.hh"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 
 class Renderer
 {
 public:
-    Renderer();
+    Renderer(const ImageData& data);
     ~Renderer();
 
     void run();
@@ -19,7 +20,9 @@ private:
 private:
     GLFWwindow* m_window;
 
-    unsigned int m_imageWidth = 800;    // Hardcoded for test now
+    // Hardcoded for now
+    // Later, takes the image width and height
+    unsigned int m_imageWidth = 800;
     unsigned int m_imageHeight = 600;
 };
 

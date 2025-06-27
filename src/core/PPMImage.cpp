@@ -1,41 +1,51 @@
 #include "PPMImage.hh"
-#include "stb_image/stb_image_write.h"
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <sstream>
 
+enum class PPMType
+{
+    None = 0,
+    P3,
+    P6 // will not be supported for now
+};
+
 static constexpr char s_commentChar = '#'; // P6 is not supported for now
 
-std::vector<std::string> parseFile(const std::string& fileName);
-void processFileData(const std::vector<std::string>& lines);
-bool isLineComment(const std::string& line);
-PPMType parseMagicNumber(const std::string& magicNum);
+std::vector<std::string> loadFileData(const std::string& fileName);
+ImageData processFileData(const std::vector<std::string>& lines);
 ImageData handleP3Data(const std::vector<std::string>& lines);
 
-bool converToPNG(const std::string& fileName)
+// Helpers
+bool isLineComment(const std::string& line);
+PPMType parseMagicNumber(const std::string& magicNum);
+
+//------------------------------------------------------------------------------
+ImageData getImageData(const std::string& fileName)
 {
     std::vector<std::string> lines;
     try
     {
-        lines = parseFile(fileName);
-        processFileData(lines);
-        return true;
+        lines = loadFileData(fileName);
+        return processFileData(lines);
     }
     catch (const std::runtime_error& e)
     {
-        std::cerr << e.what() << '\n';
-        return false;
+        ImageData data;
+        data.exceptionMsg = e.what();
+        return data;
     }
 }
 
-std::vector<std::string> parseFile(const std::string &fileName)
+//------------------------------------------------------------------------------
+std::vector<std::string> loadFileData(const std::string &fileName)
 {
     std::ifstream fileObj(fileName);
     if (!fileObj)
     {
-        throw std::runtime_error(fileName + " cound not be opened");
+        throw std::runtime_error(fileName + " could not be opened");
     }
 
     std::string line;
@@ -46,7 +56,7 @@ std::vector<std::string> parseFile(const std::string &fileName)
         if (isLineComment(line))
             continue;
 
-        lines.push_back(line);
+        lines.emplace_back(std::move(line));
     }
     fileObj.close();
 
@@ -58,34 +68,25 @@ bool isLineComment(const std::string& line)
     return !line.empty() && line[0] == s_commentChar;
 }
 
-void processFileData(const std::vector<std::string>& lines)
+ImageData processFileData(const std::vector<std::string>& lines)
 {
-    ImageData data;
-
-    switch (parseMagicNumber(lines.at(0)))
+    const PPMType type = parseMagicNumber(lines.at(0));
+    switch (type)
     {
         case PPMType::P3:
-            data = handleP3Data(lines);
+            return handleP3Data(lines);
             break;
 
         case PPMType::P6:
-            throw std::runtime_error("PPM type P6 is not supported yet\n");
+            return {0, 0, {}, "PPM P6 not supported"};
             break;
 
         case PPMType::None:
-            throw std::runtime_error("Invalid or Unsupported PPM format\n");
+            return {0, 0, {}, "Invalid image format"};
             break;
 
         default:
-            throw std::runtime_error("Hello there! ;)\n");
-    }
-
-    if (!data.pixelData.empty())
-    {
-        if (!stbi_write_png("output.png", data.imageWidth, data.imageHeight, 3, data.pixelData.data(), data.imageWidth * 3))
-        {
-            throw std::runtime_error("Failed writing to output.png\n");
-        }
+            return {0, 0, {}, "Hello there ;)"};
     }
 }
 
@@ -100,7 +101,7 @@ ImageData handleP3Data(const std::vector<std::string>& lines)
 {
     if (lines.size() < 4)
     {
-        throw std::runtime_error("Incomplete PPM header or Data\n");
+        return {0, 0, {}, "Incomplete PPM header"};
     } // Incomplete data
 
     // Image dimensions
@@ -109,7 +110,7 @@ ImageData handleP3Data(const std::vector<std::string>& lines)
         std::istringstream dimensionStream(lines.at(1));
         if (!(dimensionStream >> imageWidth >> imageHeight))
         {
-            throw std::runtime_error("Invalid image dimension format\n");
+            return {0, 0, {}, "Invalid image dimensions"};
         }
     }
 
@@ -119,11 +120,11 @@ ImageData handleP3Data(const std::vector<std::string>& lines)
         std::istringstream maxColorValueStream(lines.at(2));
         if (!(maxColorValueStream >> maxColorValue))
         {
-            throw std::runtime_error("Invalid max color value format\n");
+            return {0, 0, {}, "Invalid max color value format"};
         }
         if (maxColorValue != 255)
         {
-            throw std::runtime_error("Max value " + std::to_string(maxColorValue) + " not supported\n");
+            return {0, 0, {}, "Max color value: " + std::to_string(maxColorValue) + " not supported"};
         }
     }
 
@@ -145,16 +146,16 @@ ImageData handleP3Data(const std::vector<std::string>& lines)
             g < 0 || g > maxColorValue ||
             b < 0 || b > maxColorValue)
         {
-            throw std::runtime_error("Pixel value out of valid range (0-255)\n");
+            return {0, 0, {}, "Pixel value out of range: [0-255]"};
         }
-        pixelData.push_back(static_cast<unsigned char>(r));
-        pixelData.push_back(static_cast<unsigned char>(g));
-        pixelData.push_back(static_cast<unsigned char>(b));
+        pixelData.emplace_back(static_cast<unsigned char>(r));
+        pixelData.emplace_back(static_cast<unsigned char>(g));
+        pixelData.emplace_back(static_cast<unsigned char>(b));
     }
 
     if (pixelData.size() != imageWidth * imageHeight * 3)
     {
-        throw std::runtime_error("Pixel data inconsistent with image dimension\n");
+        return {0, 0, {}, "Pixel data inconsistent with image dimension"};
     }
 
     return {imageWidth, imageHeight, pixelData};

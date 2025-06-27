@@ -4,21 +4,17 @@
 #include <string>
 #include <vector>
 
-enum class PPMType
-{
-    None = 0,
-    P3,
-    P6 // will not be supported for now
-};
-
 struct ImageData
 {
     unsigned int imageWidth;
     unsigned int imageHeight;
     std::vector<unsigned char> pixelData;
+    std::string exceptionMsg = "";
+
+    inline bool isValid() const {return exceptionMsg.empty();}
 };
 
 // I will not test your intelligence
-bool converToPNG(const std::string& fileName);
+ImageData getImageData(const std::string& fileName);
 
 #endif // PARSER_HH
