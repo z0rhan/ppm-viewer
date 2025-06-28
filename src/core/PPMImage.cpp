@@ -2,8 +2,11 @@
 
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <sstream>
+#include <vector>
+
+static constexpr char s_commentChar = '#';
+static const std::string s_PPMextension = ".ppm";
 
 enum class PPMType
 {
@@ -12,14 +15,14 @@ enum class PPMType
     P6 // will not be supported for now
 };
 
-static constexpr char s_commentChar = '#'; // P6 is not supported for now
-
+//------------------------------------------------------------------------------
 std::vector<std::string> loadFileData(const std::string& fileName);
 ImageData processFileData(const std::vector<std::string>& lines);
 ImageData handleP3Data(const std::vector<std::string>& lines);
 
 // Helpers
 bool isLineComment(const std::string& line);
+bool hasPPMextension(const std::string& fileName);
 PPMType parseMagicNumber(const std::string& magicNum);
 
 //------------------------------------------------------------------------------
@@ -42,6 +45,11 @@ ImageData getImageData(const std::string& fileName)
 //------------------------------------------------------------------------------
 std::vector<std::string> loadFileData(const std::string &fileName)
 {
+    if (!hasPPMextension(fileName))
+    {
+        throw std::runtime_error("Invalid file: " + fileName);
+    }
+
     std::ifstream fileObj(fileName);
     if (!fileObj)
     {
@@ -66,6 +74,17 @@ std::vector<std::string> loadFileData(const std::string &fileName)
 bool isLineComment(const std::string& line)
 {
     return !line.empty() && line[0] == s_commentChar;
+}
+
+bool hasPPMextension(const std::string& fileName)
+{
+    if (fileName.length() > s_PPMextension.length())
+    {
+        return fileName.compare(fileName.length() - s_PPMextension.length(),
+                                s_PPMextension.length(), s_PPMextension) == 0;
+    }
+
+    return false;
 }
 
 ImageData processFileData(const std::vector<std::string>& lines)

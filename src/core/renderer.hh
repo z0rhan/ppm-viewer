@@ -2,6 +2,7 @@
 #define RENDERER_HH
 
 #include "PPMImage.hh"
+#include "Shader.hh"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,7 +16,10 @@ public:
     void run();
 private:
     bool initGLFW();
-    void renderLoop();
+    void renderSetup();
+    void createTexture();
+    void renderLoop(Shader& shader);
+    static void updateWindowSize(GLFWwindow* window, int width, int height);
 
 private:
     GLFWwindow* m_window;
@@ -24,6 +28,16 @@ private:
     // Later, takes the image width and height
     unsigned int m_imageWidth = 800;
     unsigned int m_imageHeight = 600;
+
+    // Image data
+    ImageData m_data;
+
+    // Vertex Buffer
+    unsigned int m_VAO;
+    unsigned int m_VBO;
+
+    // Texture ID
+    unsigned int m_textureId;
 };
 
 #endif // RENDERER_HH

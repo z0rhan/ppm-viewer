@@ -12,7 +12,7 @@ set(SOURCE
     ${CMAKE_SOURCE_DIR}/src/core/PPMImage.cpp
     ${CMAKE_SOURCE_DIR}/src/core/application.cpp
     ${CMAKE_SOURCE_DIR}/src/core/renderer.cpp
-    ${CMAKE_SOURCE_DIR}/vendor/stb_image/stb_image_write.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/Shader.cpp
     ${CMAKE_SOURCE_DIR}/vendor/glad/src/glad.c
     ${CMAKE_SOURCE_DIR}/vendor/tinyfd/tinyfiledialogs.c
 )

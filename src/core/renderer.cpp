@@ -1,9 +1,14 @@
 #include "renderer.hh"
 
-#include <GLFW/glfw3.h>
 #include <iostream>
 
-Renderer::Renderer(const ImageData& data) {}
+static const std::string s_shaderPath = "src/shader/basic.shader";
+
+Renderer::Renderer(const ImageData& data): m_data(data)
+{
+    m_imageHeight = m_data.imageHeight;
+    m_imageWidth = m_data.imageWidth;
+}
 Renderer::~Renderer() {}
 
 void Renderer::run()
@@ -13,15 +18,27 @@ void Renderer::run()
         return;
     }
 
-    renderLoop();
+    renderSetup();
+    Shader shader(s_shaderPath);
+    renderLoop(shader);
 }
 
-void Renderer::renderLoop()
+void Renderer::renderLoop(Shader& shader)
 {
     while (!glfwWindowShouldClose(m_window))
     {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_textureId);
+
+        glBindVertexArray(m_VAO);
+
+        shader.bind();
+        shader.setUniform1i("imageTexture", 0);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
@@ -61,6 +78,60 @@ bool Renderer::initGLFW()
         return false;
     }
 
+    glViewport(0, 0, m_imageWidth, m_imageHeight);
+    glfwSetFramebufferSizeCallback(m_window, updateWindowSize);
+
     return true;
 }
 
+void Renderer::renderSetup()
+{
+    float vertices[] =
+    {
+        // Positions  // Textures
+        -1.0f, -1.0f, 0.0f, 0.0f,
+        -1.0f,  1.0f, 0.0f, 1.0f,
+         1.0f,  1.0f, 1.0f, 1.0f,
+
+         1.0f,  1.0f, 1.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f,
+         1.0f, -1.0f, 1.0f, 0.0f
+    };
+
+    glGenVertexArrays(1, &m_VAO);
+    glBindVertexArray(m_VAO);
+
+    glGenBuffers(1, &m_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    // Texture
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+    createTexture();
+}
+
+void Renderer::createTexture()
+{
+    glGenTextures(1, &m_textureId);
+    glBindTexture(GL_TEXTURE_2D, m_textureId);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_imageWidth, m_imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_data.pixelData.data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void Renderer::updateWindowSize(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}

@@ -21,4 +21,4 @@ Run the program with a .ppm file as an argument:
 ```
 path/to/ppm-viewer path/to/image.ppm
 ```
-For now, it will just render an empty white window.
+This should display the image in a window.
