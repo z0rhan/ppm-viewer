@@ -84,11 +84,13 @@ ShaderSource Shader::parseShader(const std::string &filePath)
     ShaderType currentType = ShaderType::NONE;
     std::stringstream shaderSource[2];
 
-    std::ifstream fileObj(filePath);
+    std::string shaderPath = getBinaryDir().string() + filePath;
+
+    std::ifstream fileObj(shaderPath);
     if (!fileObj)
     {
         throw std::runtime_error("Error reading from file! -> "
-                                 + filePath);
+                                 + shaderPath);
     }
 
     std::string line;
@@ -149,4 +151,19 @@ unsigned int Shader::compileShader(unsigned int type, const std::string &source)
     }
 
     return shader;
+}
+
+fs::path Shader::getBinaryDir()
+{
+    fs::path binDir;
+
+#ifdef _WIN32
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    binDir = std::filesystem::path(buffer);
+#else
+    binDir = fs::canonical("/proc/self/exe");
+#endif
+
+    return binDir.parent_path();
 }

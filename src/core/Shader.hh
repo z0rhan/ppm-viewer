@@ -29,6 +29,9 @@
 
 #include <string>
 #include <unordered_map>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 struct ShaderSource
 {
@@ -71,6 +74,9 @@ private:
     static unsigned int compileShader(unsigned int type,const std::string& source);
     // returns the location of an uniform
     int getUniformLocation(const std::string& name);
+
+    // Get the binary directory
+    static fs::path getBinaryDir();
 };
 
 

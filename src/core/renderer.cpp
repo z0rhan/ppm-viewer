@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-static const std::string s_shaderPath = "src/shader/basic.shader";
+const std::string s_shaderPath = "/shader/basic.shader";
 
 Renderer::Renderer(const ImageData& data): m_data(data)
 {

@@ -19,6 +19,9 @@ set(SOURCE
 
 add_executable(${PROJECT_NAME} ${SOURCE})
 
+# Copy the shader file to the binary directory
+file(COPY src/shader/basic.shader DESTINATION ${CMAKE_BINARY_DIR}/bin/shader)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glad/include
