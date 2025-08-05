@@ -10,8 +10,8 @@
 //------------------------------------------------------------------------------
 // Public
 Shader::Shader(const std::string& filePath):
-    m_filePath(filePath),
-    m_renderedId(0)
+    m_renderedId(0),
+    m_filePath(filePath)
 {
     ShaderSource source;
     try

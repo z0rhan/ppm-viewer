@@ -8,7 +8,8 @@ struct ImageData
 {
     unsigned int imageWidth;
     unsigned int imageHeight;
-    std::vector<unsigned char> pixelData;
+    unsigned int maxColorValue;
+    std::vector<unsigned int> pixelData;
     std::string exceptionMsg = "";
 
     inline bool isValid() const {return exceptionMsg.empty();}

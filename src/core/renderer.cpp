@@ -1,6 +1,7 @@
 #include "renderer.hh"
 
 #include <iostream>
+#include <vector>
 
 const std::string s_shaderPath = "/shader/basic.shader";
 
@@ -127,7 +128,31 @@ void Renderer::createTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_imageWidth, m_imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, m_data.pixelData.data());
+    unsigned int maxColorValue = m_data.maxColorValue;
+
+    if (maxColorValue <= 255) {
+        // Use 8-bit texture for standard images (max color <= 255)
+        std::vector<unsigned char> byteData;
+        byteData.reserve(m_data.pixelData.size());
+        for (unsigned int value : m_data.pixelData) {
+            byteData.push_back(static_cast<unsigned char>(value));
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_imageWidth, m_imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, byteData.data());
+
+    }
+    else
+    {
+        // Use 16-bit texture for high bit-depth images (max color > 255)
+        std::vector<unsigned short> shortData;
+        shortData.reserve(m_data.pixelData.size());
+        for (unsigned int value : m_data.pixelData) {
+            // Scale to 16-bit range (0-65535) based on the actual max color value
+            unsigned short scaledValue = static_cast<unsigned short>((value * 65535) / maxColorValue);
+            shortData.push_back(scaledValue);
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16, m_imageWidth, m_imageHeight, 0, GL_RGB, GL_UNSIGNED_SHORT, shortData.data());
+    }
+
     glGenerateMipmap(GL_TEXTURE_2D);
 }
 
