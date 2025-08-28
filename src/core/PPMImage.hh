@@ -3,19 +3,19 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 struct ImageData
 {
-    unsigned int imageWidth;
-    unsigned int imageHeight;
-    unsigned int maxColorValue;
-    std::vector<unsigned int> pixelData;
+    uint32_t imageWidth;
+    uint32_t imageHeight;
+    uint32_t maxColorValue;
+    std::vector<uint32_t> pixelData;
     std::string exceptionMsg = "";
 
     inline bool isValid() const {return exceptionMsg.empty();}
 };
 
-// I will not test your intelligence
-ImageData getImageData(const std::string& fileName);
+void getImageData(const std::string& fileName, ImageData& data);
 
 #endif // PARSER_HH

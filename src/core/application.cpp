@@ -37,7 +37,7 @@ void Application::parseArguments(int argc, char** argv)
 
 bool Application::loadImageData()
 {
-    m_imageData = getImageData(m_fileName);
+    getImageData(m_fileName, m_imageData);
 
     if (!m_imageData.isValid())
     {
