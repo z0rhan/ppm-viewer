@@ -1,6 +1,7 @@
 #include "PPMImage.hh"
 
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -68,8 +69,7 @@ void getImageData(const std::string& fileName, ImageData& data)
             break;
 
         case PPMType::P6:
-            data.exceptionMsg = "Not implemented now";
-            //parseP6Data(fileObj, data);
+            parseP6Data(fileObj, data);
             break;
 
         case PPMType::None:
@@ -163,49 +163,120 @@ bool nextToken(std::istream& f, std::string& token)
 
 void parseP3Data(std::istream& f, ImageData& data)
 {
+    std::vector<uint16_t> pixelData;
+    pixelData.reserve(data.imageWidth * data.imageHeight * 3);
+
+    for (size_t it = 0; it < data.imageWidth * data.imageHeight ; it++)
+    {
+        uint16_t r, g, b;
+        try
+        {
+            r = readValue<uint16_t>(f);
+            g = readValue<uint16_t>(f);
+            b = readValue<uint16_t>(f);
+        }
+        catch (const std::runtime_error& e)
+        {
+            data.exceptionMsg = e.what();
+            return;
+        }
+
+        if (data.maxColorValue <= 255)
+        {
+            // Map each value to 8-bit range
+            r = (r * 255) / data.maxColorValue;
+            g = (g * 255) / data.maxColorValue;
+            b = (b * 255) / data.maxColorValue;
+        }
+        else
+        {
+            // Map each value to 16-bit range
+            r = (r * 65535) / data.maxColorValue;
+            g = (g * 65535) / data.maxColorValue;
+            b = (b * 65535) / data.maxColorValue;
+        }
+
+        pixelData.emplace_back(r);
+        pixelData.emplace_back(g);
+        pixelData.emplace_back(b);
+    }
+
+    if (pixelData.size() != data.imageWidth * data.imageHeight * 3)
+    {
+        data.exceptionMsg = "Pixel data invalid or corrupted";
+        return;
+    }
+
+    data.pixelData = std::move(pixelData);
+}
+
+void parseP6Data(std::istream& f, ImageData& data)
+{
+    // Get the size of the binary data
+    std::streampos currentPos = f.tellg(); // get current position
+    f.seekg(0, std::ios::end); // get the position of EOF
+    std::streampos endPos = f.tellg();
+    std::streamsize dataSize = endPos - currentPos;
+
+    f.seekg(currentPos); // Move to the starting position
+    // The above can be avoided by just allocating a buffer of
+    // width * height * bytesPerSample
+    // But I'm doing it anyway for learning purposes
+
     uint32_t channelCount = 0;
     if (data.maxColorValue <= 255)
     {
-        data.pixelData.reserve(data.imageWidth * data.imageHeight);
+        std::vector<uint8_t> buffer(dataSize);
 
-        for (size_t it = 0; it < data.imageWidth * data.imageHeight ; it++)
+        if (!f.read(reinterpret_cast<char*>(buffer.data()), dataSize))
         {
-            uint32_t r, g, b;
-            try
-            {
-                r = readValue<uint32_t>(f);
-                g = readValue<uint32_t>(f);
-                b = readValue<uint32_t>(f);
-            }
-            catch (const std::runtime_error& e)
-            {
-                data.exceptionMsg = e.what();
-                return;
-            }
+            data.exceptionMsg = "Error: could only read " +
+                                std::to_string(f.gcount()) +
+                                " of " + std::to_string(dataSize) + " bytes!";
+            return;
+        }
 
-            uint32_t pixel = (r << 16) | (g << 8) | b;
-            data.pixelData.emplace_back(pixel);
+        data.pixelData.reserve(data.imageWidth * data.imageHeight * 3);
+        for (size_t it = 0; it < buffer.size(); it += 3)
+        {
+            uint16_t r = buffer[it];
+            uint16_t g = buffer[it + 1];
+            uint16_t b = buffer[it + 2];
+
+            // Map each value to 8-bit range
+            r = (r * 255) / data.maxColorValue;
+            g = (g * 255) / data.maxColorValue;
+            b = (b * 255) / data.maxColorValue;
+
+            data.pixelData.emplace_back(r);
+            data.pixelData.emplace_back(g);
+            data.pixelData.emplace_back(b);
             channelCount += 3;
         }
     }
     else
     {
-        data.pixelData.reserve(data.imageWidth * data.imageHeight * 3);
+        std::vector<uint8_t> buffer(dataSize);
 
-        for (size_t it = 0; it < data.imageWidth * data.imageHeight ; it++)
+        if (!f.read(reinterpret_cast<char*>(buffer.data()), dataSize))
         {
-            uint32_t r, g, b;
-            try
-            {
-                r = readValue<uint32_t>(f);
-                g = readValue<uint32_t>(f);
-                b = readValue<uint32_t>(f);
-            }
-            catch (const std::runtime_error& e)
-            {
-                data.exceptionMsg = e.what();
-                return;
-            }
+            data.exceptionMsg = "Error: could only read " +
+                                std::to_string(f.gcount()) +
+                                " of " + std::to_string(dataSize) + " bytes!";
+            return;
+        }
+
+        data.pixelData.reserve(data.imageWidth * data.imageHeight * 3);
+        for (size_t it = 0; it < buffer.size(); it += 6)
+        {
+            uint16_t r = (buffer[it] << 8) | buffer[it + 1];
+            uint16_t g = (buffer[it + 2] << 8) | buffer[it + 3];
+            uint16_t b = (buffer[it + 4] << 8) | buffer[it + 5];
+
+            // Map each value to 16-bit range
+            r = (r * 65535) / data.maxColorValue;
+            g = (g * 65535) / data.maxColorValue;
+            b = (b * 65535) / data.maxColorValue;
 
             data.pixelData.emplace_back(r);
             data.pixelData.emplace_back(g);

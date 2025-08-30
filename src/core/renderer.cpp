@@ -132,46 +132,22 @@ void Renderer::createTexture()
     uint32_t maxColorValue = m_data.maxColorValue;
 
     if (maxColorValue <= 255) {
-        // Use 8-bit texture for standard images (max color <= 255)
-        std::vector<uint8_t> byteData;
-        byteData.reserve(m_data.pixelData.size() * 3);
-
-        for (uint32_t pixel : m_data.pixelData)
+        // TODO: make it so that the data I get does not need further processing
+        std::vector<uint8_t> buffer(m_data.imageWidth * m_data.imageHeight * 3);
+        for (size_t it = 0; it < buffer.size(); it++)
         {
-            uint8_t r = (pixel >> 16) & 0xFF;
-            uint8_t g = (pixel >> 8) & 0xFF;
-            uint8_t b = pixel & 0xFF;
-
-            // Scale to 8-bit range (0-255)
-            if (maxColorValue != 255)
-            {
-                r = static_cast<uint8_t>((r * 255) / maxColorValue);
-                g = static_cast<uint8_t>((g * 255) / maxColorValue);
-                b = static_cast<uint8_t>((b * 255) / maxColorValue);
-            }
-
-            byteData.emplace_back(r);
-            byteData.emplace_back(g);
-            byteData.emplace_back(b);
+            buffer[it] = static_cast<uint8_t>(m_data.pixelData[it]);
         }
+        // Use 8-bit texture for standard images (max color <= 255)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_imageWidth, m_imageHeight, 0,
-                     GL_RGB, GL_UNSIGNED_BYTE, byteData.data());
+                     GL_RGB, GL_UNSIGNED_BYTE,
+                     reinterpret_cast<uint8_t*>(buffer.data()));
     }
     else
     {
         // Use 16-bit texture for high bit-depth images (max color > 255)
-        std::vector<uint16_t> shortData;
-        shortData.reserve(m_data.pixelData.size());
-
-        for (uint16_t value : m_data.pixelData)
-        {
-            // Scale to 16-bit range (0-65535) based on the actual max color value
-            uint16_t scaledValue =
-                static_cast<uint16_t>((value * 65535) / maxColorValue);
-            shortData.push_back(scaledValue);
-        }
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16, m_imageWidth, m_imageHeight, 0,
-                     GL_RGB, GL_UNSIGNED_SHORT, shortData.data());
+                     GL_RGB, GL_UNSIGNED_SHORT, m_data.pixelData.data());
     }
 
     glGenerateMipmap(GL_TEXTURE_2D);

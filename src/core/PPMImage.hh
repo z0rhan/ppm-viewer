@@ -10,7 +10,7 @@ struct ImageData
     uint32_t imageWidth;
     uint32_t imageHeight;
     uint32_t maxColorValue;
-    std::vector<uint32_t> pixelData;
+    std::vector<uint16_t> pixelData;
     std::string exceptionMsg = "";
 
     inline bool isValid() const {return exceptionMsg.empty();}
