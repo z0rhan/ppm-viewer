@@ -24,14 +24,14 @@ void parseP6Data(std::istream& f, ImageData& data);
 // Helpers
 bool hasPPMextension(const std::string& fileName);
 PPMType parseHeader(std::istream& f, ImageData& data);
-bool nextToken(std::istream& f, std::string& token);
+bool getToken(std::istream& f, std::string& token);
 
 //------------------------------------------------------------------------------
 template <typename T>
-T readValue(std::istream& f)
+T fromStream(std::istream& f)
 {
     std::string token;
-    if (!nextToken(f, token))
+    if (!getToken(f, token))
         throw std::runtime_error("Unexpected EOF when a token is expected");
 
     std::istringstream iss(token);
@@ -96,7 +96,7 @@ PPMType parseHeader(std::istream& f, ImageData& data)
     PPMType type;
     try
     {
-        std::string PPM_t = readValue<std::string>(f);
+        std::string PPM_t = fromStream<std::string>(f);
         if (PPM_t == "P3")
             type = PPMType::P3;
         else if (PPM_t == "P6")
@@ -107,9 +107,9 @@ PPMType parseHeader(std::istream& f, ImageData& data)
             return PPMType::None;
         }
 
-        data.imageWidth = readValue<uint32_t>(f);
-        data.imageHeight = readValue<uint32_t>(f);
-        data.maxColorValue = readValue<uint32_t>(f);
+        data.imageWidth = fromStream<uint32_t>(f);
+        data.imageHeight = fromStream<uint32_t>(f);
+        data.maxColorValue = fromStream<uint32_t>(f);
 
         if (data.imageWidth <= 0 || data.imageHeight <= 0)
         {
@@ -136,7 +136,7 @@ PPMType parseHeader(std::istream& f, ImageData& data)
 }
 
 // Only call if you're sure that there is anohter token in the stream
-bool nextToken(std::istream& f, std::string& token)
+bool getToken(std::istream& f, std::string& token)
 {
     token.clear();
     char c;
@@ -166,45 +166,39 @@ void parseP3Data(std::istream& f, ImageData& data)
     std::vector<uint16_t> pixelData;
     pixelData.reserve(data.imageWidth * data.imageHeight * 3);
 
-    for (size_t it = 0; it < data.imageWidth * data.imageHeight ; it++)
+    std::streampos currentPos = f.tellg();
+    f.seekg(0, std::ios::end);
+    std::streampos endPos = f.tellg();
+    std::streamsize size = endPos - currentPos;
+    
+    f.seekg(currentPos);
+
+    std::string fileContent(size, '\0');
+    f.read(reinterpret_cast<char*>(&fileContent[0]), size);
+
+    const char* contentPtr = fileContent.c_str();
+    const char* endPtr = contentPtr + fileContent.size();
+
+    while (contentPtr < endPtr)
     {
-        uint16_t r, g, b;
-        try
+        while (contentPtr < endPtr && std::isspace(static_cast<unsigned char>(*contentPtr))) contentPtr++;
+
+        if (*contentPtr == '#')
         {
-            r = readValue<uint16_t>(f);
-            g = readValue<uint16_t>(f);
-            b = readValue<uint16_t>(f);
+            while (contentPtr < endPtr && *contentPtr != '\n') contentPtr++;
         }
-        catch (const std::runtime_error& e)
-        {
-            data.exceptionMsg = e.what();
-            return;
-        }
+
+        char* next;
+        long value = std::strtol(contentPtr, &next, 10);
+        if (contentPtr == next) break;
+        contentPtr = next;
 
         if (data.maxColorValue <= 255)
-        {
-            // Map each value to 8-bit range
-            r = (r * 255) / data.maxColorValue;
-            g = (g * 255) / data.maxColorValue;
-            b = (b * 255) / data.maxColorValue;
-        }
+            value = (value * 255) / data.maxColorValue;
         else
-        {
-            // Map each value to 16-bit range
-            r = (r * 65535) / data.maxColorValue;
-            g = (g * 65535) / data.maxColorValue;
-            b = (b * 65535) / data.maxColorValue;
-        }
+            value = (value * 65535) / data.maxColorValue;
 
-        pixelData.emplace_back(r);
-        pixelData.emplace_back(g);
-        pixelData.emplace_back(b);
-    }
-
-    if (pixelData.size() != data.imageWidth * data.imageHeight * 3)
-    {
-        data.exceptionMsg = "Pixel data invalid or corrupted";
-        return;
+        pixelData.emplace_back(static_cast<uint16_t>(value));
     }
 
     data.pixelData = std::move(pixelData);
