@@ -11,9 +11,6 @@ struct ImageData
     uint32_t imageHeight;
     uint32_t maxColorValue;
     std::vector<uint16_t> pixelData;
-    std::string exceptionMsg = "";
-
-    inline bool isValid() const {return exceptionMsg.empty();}
 };
 
 void getImageData(const std::string& fileName, ImageData& data);

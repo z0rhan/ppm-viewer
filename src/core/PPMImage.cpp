@@ -12,7 +12,6 @@ const std::string s_PPMextension = ".ppm";
 
 enum class PPMType
 {
-    None = 0,
     P3,
     P6
 };
@@ -49,15 +48,13 @@ void getImageData(const std::string& fileName, ImageData& data)
 {
     if (!hasPPMextension(fileName))
     {
-        data.exceptionMsg = "Invalid file: " + fileName;
-        return;
+        throw std::runtime_error("Invalid file: " + fileName);
     }
 
     std::ifstream fileObj(fileName, std::ios::in | std::ios::binary);
     if (!fileObj)
     {
-        data.exceptionMsg = fileName + " could not be opened!";
-        return;
+        throw std::runtime_error(fileName + " could not be opened!");
     }
 
     PPMType type = parseHeader(fileObj, data);
@@ -70,9 +67,6 @@ void getImageData(const std::string& fileName, ImageData& data)
 
         case PPMType::P6:
             parseP6Data(fileObj, data);
-            break;
-
-        case PPMType::None:
             break;
     }
 
@@ -94,44 +88,32 @@ bool hasPPMextension(const std::string& fileName)
 PPMType parseHeader(std::istream& f, ImageData& data)
 {
     PPMType type;
-    try
+    std::string PPM_t = fromStream<std::string>(f);
+    if (PPM_t == "P3")
+        type = PPMType::P3;
+    else if (PPM_t == "P6")
+        type = PPMType::P6;
+    else
     {
-        std::string PPM_t = fromStream<std::string>(f);
-        if (PPM_t == "P3")
-            type = PPMType::P3;
-        else if (PPM_t == "P6")
-            type = PPMType::P6;
-        else
-        {
-            data.exceptionMsg = "Unsupported PPM type: " + PPM_t;
-            return PPMType::None;
-        }
-
-        data.imageWidth = fromStream<uint32_t>(f);
-        data.imageHeight = fromStream<uint32_t>(f);
-        data.maxColorValue = fromStream<uint32_t>(f);
-
-        if (data.imageWidth <= 0 || data.imageHeight <= 0)
-        {
-            data.exceptionMsg = "Invalid image dimensions: "
-                                + std::to_string(data.imageWidth) + " "
-                                + std::to_string(data.imageHeight);
-            return PPMType::None;
-        }
-
-        if (data.maxColorValue<= 0)
-        {
-            data.exceptionMsg = "Invalid Max Color value: "
-                                + std::to_string(data.maxColorValue);
-            return PPMType::None;
-        }
-    }
-    catch (const std::runtime_error& e)
-    {
-        data.exceptionMsg = e.what();
-        return PPMType::None;
+        throw std::runtime_error("Unsupported PPM type: " + PPM_t);
     }
 
+    data.imageWidth = fromStream<uint32_t>(f);
+    data.imageHeight = fromStream<uint32_t>(f);
+    data.maxColorValue = fromStream<uint32_t>(f);
+
+    if (data.imageWidth <= 0 || data.imageHeight <= 0)
+    {
+        throw std::runtime_error("Invalid image dimensions: "
+                                 + std::to_string(data.imageWidth) + " "
+                                 + std::to_string(data.imageHeight));
+    }
+
+    if (data.maxColorValue<= 0)
+    {
+        throw std::runtime_error("Invalid Max Color value: "
+                                 + std::to_string(data.maxColorValue));
+    }
     return type;
 }
 
@@ -224,10 +206,10 @@ void parseP6Data(std::istream& f, ImageData& data)
 
         if (!f.read(reinterpret_cast<char*>(buffer.data()), dataSize))
         {
-            data.exceptionMsg = "Error: could only read " +
-                                std::to_string(f.gcount()) +
-                                " of " + std::to_string(dataSize) + " bytes!";
-            return;
+            throw std::runtime_error("Error: could only read " +
+                                     std::to_string(f.gcount()) +
+                                     " of " +
+                                     std::to_string(dataSize) + " bytes!");
         }
 
         data.pixelData.reserve(data.imageWidth * data.imageHeight * 3);
@@ -254,10 +236,10 @@ void parseP6Data(std::istream& f, ImageData& data)
 
         if (!f.read(reinterpret_cast<char*>(buffer.data()), dataSize))
         {
-            data.exceptionMsg = "Error: could only read " +
-                                std::to_string(f.gcount()) +
-                                " of " + std::to_string(dataSize) + " bytes!";
-            return;
+            throw std::runtime_error("Error: could only read " +
+                                     std::to_string(f.gcount()) +
+                                     " of " +
+                                     std::to_string(dataSize) + " bytes!");
         }
 
         data.pixelData.reserve(data.imageWidth * data.imageHeight * 3);
@@ -281,7 +263,6 @@ void parseP6Data(std::istream& f, ImageData& data)
 
     if (channelCount != data.imageWidth * data.imageHeight * 3)
     {
-        data.exceptionMsg = "Pixel data invalid or corrupted";
-        return;
+        throw std::runtime_error("Pixel data invalid or corrupted");
     }
 }

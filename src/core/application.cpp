@@ -2,6 +2,7 @@
 #include "renderer.hh"
 
 #include <iostream>
+#include <stdexcept>
 
 Application::Application() {}
 Application::~Application() {}
@@ -37,11 +38,13 @@ void Application::parseArguments(int argc, char** argv)
 
 bool Application::loadImageData()
 {
-    getImageData(m_fileName, m_imageData);
-
-    if (!m_imageData.isValid())
+    try
     {
-        displayErrorMsg(m_imageData.exceptionMsg.c_str());
+        getImageData(m_fileName, m_imageData);
+    }
+    catch (const std::runtime_error& e)
+    {
+        displayErrorMsg(e.what());
         return false;
     }
 
